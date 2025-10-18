@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/simulot/immich-go/app/cmd"
 )
@@ -40,8 +41,29 @@ func immichGoMain(ctx context.Context) error {
 	}()
 
 	c, a := cmd.RootImmichGoCommand(ctx)
-	// let's start
 	err := c.ExecuteContext(ctx)
+	if err == nil {
+		return nil
+	}
+
+	retryMax, _ := c.Flags().GetInt("retry-max")
+	retryDelay, _ := c.Flags().GetDuration("retry-delay")
+
+	for i := 0; i < retryMax; i++ {
+		a.Log().Info(fmt.Sprintf("command failed, wait for %s, and retry", retryDelay.String()))
+		select {
+		case <-time.After(retryDelay):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		c, a = cmd.RootImmichGoCommand(ctx)
+		c.SetArgs(os.Args[1:])
+		err = c.ExecuteContext(ctx)
+		if err == nil {
+			return nil
+		}
+	}
+
 	if err != nil && a.Log().GetSLog() != nil {
 		a.Log().Error(err.Error())
 	}

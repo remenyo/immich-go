@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/simulot/immich-go/app"
 	"github.com/simulot/immich-go/app/cmd/archive"
@@ -26,6 +27,9 @@ func RootImmichGoCommand(ctx context.Context) (*cobra.Command, *app.Application)
 	}
 	cobra.EnableTraverseRunHooks = true // doc: cobra/site/content/user_guide.md
 	a := app.New(ctx, c)
+
+	c.PersistentFlags().Int("retry-max", 0, "Maximum number of retries on failed commands.")
+	c.PersistentFlags().Duration("retry-delay", 5*time.Second, "Delay between retries.")
 
 	// add immich-go commands
 	c.AddCommand(

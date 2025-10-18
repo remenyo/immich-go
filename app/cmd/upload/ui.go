@@ -79,10 +79,6 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 		case tcell.KeyCtrlQ, tcell.KeyCtrlC:
 			ui.restoreLogger(app)
 			cancel(errors.New("interrupted: Ctrl+C or Ctrl+Q pressed"))
-		case tcell.KeyEnter:
-			if uploadDone.Load() {
-				stopUI(nil)
-			}
 		}
 		return event
 	})
@@ -213,7 +209,7 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 		pages.AddPage("modal", modal, true, false)
 		// upload is done!
 		pages.ShowPage("modal")
-
+		stopUI(err)
 		return err
 	})
 
@@ -231,7 +227,7 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 }
 
 func newModal(message string) tview.Primitive {
-	message += "\nYou can quit the program safely.\n\nPress the [enter] key to exit."
+	message += "\nYou can quit the program safely."
 	lines := strings.Count(message, "\n")
 	// Returns a new primitive which puts the provided primitive in the center and
 	// sets its size to the given width and height.
