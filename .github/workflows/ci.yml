@@ -47,7 +47,7 @@ jobs:
          go test -race -v -count=1 -coverprofile=coverage.out ./...
 
      - name: Upload artifact
-       uses: actions/upload-artifact@v3
+       uses: actions/upload-artifact@v4
        with:
          name: immich-go
          path: |
