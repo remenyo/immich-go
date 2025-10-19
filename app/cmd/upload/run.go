@@ -593,6 +593,12 @@ func (upCmd *UpCmd) processUploadedAsset(ctx context.Context, a *assets.Asset, s
 		upCmd.manageAssetAlbums(ctx, a.File, a.ID, a.Albums)
 		upCmd.manageAssetTags(ctx, a)
 	}
+	if a.Locked {
+		_, err := upCmd.app.Client().Immich.UpdateAssetsVisibility(ctx, []string{a.ID}, "locked")
+		if err != nil {
+			upCmd.app.Jnl().Record(ctx, fileevent.UploadServerError, a.File, "error", err.Error())
+		}
+	}
 }
 
 /*

@@ -61,6 +61,8 @@ type Asset struct {
 
 	// buffer management
 	cacheReader *cachereader.CacheReader
+
+	Locked bool // The asset is locked
 }
 
 // Kind is the probable type of the image
@@ -131,6 +133,7 @@ func (a Asset) LogValue() slog.Value {
 		slog.Int("Stars", a.Rating),
 		slog.String("Latitude", fmt.Sprintf("%.0f.xxxxx", a.Latitude)),
 		slog.String("Longitude", fmt.Sprintf("%.0f.xxxxx", a.Longitude)),
+		slog.Bool("Locked", a.Locked),
 	)
 }
 

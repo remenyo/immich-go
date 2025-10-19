@@ -535,6 +535,7 @@ func (to *Takeout) makeAsset(_ context.Context, dir string, f *assetFile, md *as
 		FileSize:         f.length,
 		OriginalFileName: f.base,
 		FileDate:         f.date,
+		Locked:           strings.Contains(dir, "Locked Folder"),
 	}
 
 	// get the original file name from metadata

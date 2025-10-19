@@ -46,6 +46,7 @@ type ImmichAssetInterface interface {
 
 	AssetUpload(context.Context, *assets.Asset) (AssetResponse, error)
 	DeleteAssets(context.Context, []string, bool) error
+	UpdateAssetsVisibility(ctx context.Context, ids []string, visibility string) (bool, error)
 }
 
 type ImmichClientInterface interface {
