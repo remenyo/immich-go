@@ -5,13 +5,13 @@ import (
 )
 
 type UpdateAssetsVisibilityRequest struct {
-	IDs      []string `json:"ids"`
+	IDs        []string `json:"ids"`
 	Visibility string   `json:"visibility"`
 }
 
 func (ic *ImmichClient) UpdateAssetsVisibility(ctx context.Context, ids []string, visibility string) (bool, error) {
 	req := UpdateAssetsVisibilityRequest{
-		IDs:      ids,
+		IDs:        ids,
 		Visibility: visibility,
 	}
 

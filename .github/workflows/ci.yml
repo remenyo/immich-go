@@ -45,6 +45,16 @@ jobs:
      - name: Run tests
        run: |
          go test -race -v -count=1 -coverprofile=coverage.out ./...
+
+     - name: Upload artifact
+       uses: actions/upload-artifact@v3
+       with:
+         name: immich-go
+         path: |
+           immich-linux-amd64
+           immich-linux-arm64
+           immich-windows-amd64.exe
+           immich-darwin-amd64
  ci-windows:
    name: Continuous Integration (Windows)
    runs-on: windows-latest
