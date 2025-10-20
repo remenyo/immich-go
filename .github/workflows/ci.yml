@@ -1,15 +1,10 @@
 name: CI Pipeline
 
 on:
- pull_request:
-   branches:
-     - main
-     - next
- push:
-   branches:
-     - main
-     - next
- workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -71,7 +66,10 @@ jobs:
 
      - name: Build binary
        run: |
-         CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o immich-windows-amd64.exe -ldflags="-s -w -extldflags=-static" main.go
+         $env:CGO_ENABLED="0"
+         $env:GOOS="windows"
+         $env:GOARCH="amd64"
+         go build -o immich-windows-amd64.exe -ldflags="-s -w -extldflags=-static" main.go
 
      - name: Run tests
        run: |
