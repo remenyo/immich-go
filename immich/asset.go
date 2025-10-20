@@ -253,6 +253,22 @@ func (ic *ImmichClient) UpdateAsset(ctx context.Context, id string, param UpdAss
 	return &r, err
 }
 
+func (ic *ImmichClient) UpdateAssetsVisibility(ctx context.Context, ids []string, visibility string) error {
+	if ic.dryRun {
+		return nil
+	}
+	type updAssets struct {
+		IDs        []string `json:"ids"`
+		Visibility string   `json:"visibility"`
+	}
+
+	param := updAssets{
+		IDs:        ids,
+		Visibility: visibility,
+	}
+	return ic.newServerCall(ctx, "updateAssetsVisibility").do(putRequest("/assets", setJSONBody(param)))
+}
+
 func (ic *ImmichClient) DownloadAsset(ctx context.Context, id string) (io.ReadCloser, error) {
 	var rc io.ReadCloser
 

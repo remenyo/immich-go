@@ -593,6 +593,12 @@ func (upCmd *UpCmd) processUploadedAsset(ctx context.Context, a *assets.Asset, s
 		upCmd.manageAssetAlbums(ctx, a.File, a.ID, a.Albums)
 		upCmd.manageAssetTags(ctx, a)
 	}
+	if a.Visibility == "locked" {
+		err := upCmd.app.Client().Immich.UpdateAssetsVisibility(ctx, []string{a.ID}, "locked")
+		if err != nil {
+			upCmd.app.Jnl().Log().Error("can't set asset visibility", "err", err, "asset", a.File.Name())
+		}
+	}
 }
 
 /*

@@ -537,6 +537,10 @@ func (to *Takeout) makeAsset(_ context.Context, dir string, f *assetFile, md *as
 		FileDate:         f.date,
 	}
 
+	if strings.Contains(file, "Locked Folder") {
+		a.Visibility = "locked"
+	}
+
 	// get the original file name from metadata
 	if md != nil && md.FileName != "" {
 		title := md.FileName
