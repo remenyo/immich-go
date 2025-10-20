@@ -59,6 +59,9 @@ type Asset struct {
 	Latitude  float64 // GPS latitude
 	Longitude float64 // GPS longitude
 
+	// Asset visibility
+	Visibility string // Visibility of the asset
+
 	// buffer management
 	cacheReader *cachereader.CacheReader
 }
