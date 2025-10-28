@@ -38,6 +38,7 @@ type Asset struct {
 	Albums           []AlbumSimplified `json:"-"` // Albums that asset belong to
 	Tags             []TagSimplified   `json:"tags"`
 	LibraryID        string            `json:"libraryId,omitempty"`
+	Visibility       string            `json:"visibility,omitempty"`
 }
 
 // NewAssetFromImmich creates an assets.Asset from an immich.Asset.
@@ -57,6 +58,7 @@ func (ia Asset) AsAsset() *assets.Asset {
 		File:             fshelper.FSName(nil, ia.OriginalFileName),
 		FileSize:         int(ia.ExifInfo.FileSizeInByte),
 		Checksum:         ia.Checksum,
+		Visibility:       ia.Visibility,
 	}
 	for _, album := range ia.Albums {
 		a.Albums = append(a.Albums, assets.Album{
