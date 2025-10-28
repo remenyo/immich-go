@@ -83,7 +83,6 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 			upCmd.Restart = true
 			ui.restoreLogger(app)
 			cancel(errors.New("interrupted: Ctrl+R pressed"))
-
 		}
 		return event
 	})
