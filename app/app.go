@@ -15,20 +15,22 @@ type (
 
 // Application holds configuration used by commands
 type Application struct {
-	client Client
-	log    *Log
-	jnl    *fileevent.Journal
-	tz     *time.Location
+	client      Client
+	log         *Log
+	jnl         *fileevent.Journal
+	tz          *time.Location
+	UploadCache *UploadCache
 
 	// TODO manage configuration file
 	// ConfigurationFile string // Path to the configuration file to use
 }
 
-func New(ctx context.Context, cmd *cobra.Command) *Application {
+func New(ctx context.Context, cmd *cobra.Command, ic *UploadCache) *Application {
 	// application's context
 	app := &Application{
-		log: &Log{},
-		tz:  time.Local,
+		log:         &Log{},
+		tz:          time.Local,
+		UploadCache: ic,
 	}
 	// app.PersistentFlags().StringVar(&app.ConfigurationFile, "use-configuration", app.ConfigurationFile, "Specifies the configuration to use")
 	AddLogFlags(ctx, cmd, app)

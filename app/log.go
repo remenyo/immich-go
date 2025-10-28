@@ -45,30 +45,36 @@ func AddLogFlags(ctx context.Context, cmd *cobra.Command, app *Application) {
 }
 
 func (log *Log) OpenLogFile() error {
-	var w io.WriteCloser
+	var w io.Writer = log.mainWriter
+	var err error
 
-	if log.File == "" {
-		log.File = configuration.DefaultLogFile()
-	}
-	if log.File != "" {
-		if log.mainWriter == nil {
-			err := configuration.MakeDirForFile(log.File)
-			if err != nil {
-				return err
-			}
-			w, err = os.OpenFile(log.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o664)
-			if err != nil {
-				return err
-			}
-			err = log.sLevel.UnmarshalText([]byte(strings.ToUpper(log.Level)))
-			if err != nil {
-				return err
-			}
-			log.Message("Log file: %s", log.File)
+	if w == nil {
+		if log.File == "" {
+			log.File = configuration.DefaultLogFile()
 		}
-	} else {
-		w = os.Stdout
+
+		if log.File != "" {
+			err = configuration.MakeDirForFile(log.File)
+			if err != nil {
+				return err
+			}
+			var f *os.File
+			f, err = os.OpenFile(log.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o664)
+			if err != nil {
+				return err
+			}
+			w = f
+			log.Message("Log file: %s", log.File)
+		} else {
+			w = os.Stdout
+		}
 	}
+
+	err = log.sLevel.UnmarshalText([]byte(strings.ToUpper(log.Level)))
+	if err != nil {
+		return err
+	}
+
 	log.setHandlers(w, nil)
 	loghelper.SetGlobalLogger(log.Logger)
 	return nil

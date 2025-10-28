@@ -72,7 +72,7 @@ func simulateAndCheck(t *testing.T, fileList string, flags *gp.ImportFlags, expe
 }
 
 // Simulate takeout archive upload
-func simulate_upload(testname string, flags *gp.ImportFlags, fsys []fs.FS) (*fileevent.Recorder, error) {
+func simulate_upload(testname string, flags *gp.ImportFlags, fsys []fs.FS) (*fileevent.Journal, error) {
 	ctx := context.Background()
 
 	logFile, err := os.Create(testname + ".json")
@@ -82,7 +82,10 @@ func simulate_upload(testname string, flags *gp.ImportFlags, fsys []fs.FS) (*fil
 	defer logFile.Close()
 
 	log := slog.New(slog.NewJSONHandler(logFile, nil))
-	jnl := fileevent.NewRecorder(log)
+	jnl, err := fileevent.NewJournal(log, "")
+	if err != nil {
+		return nil, err
+	}
 	adapter, err := gp.NewTakeout(ctx, jnl, flags, fsys...)
 	if err != nil {
 		return nil, err
