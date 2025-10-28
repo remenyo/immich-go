@@ -2,12 +2,6 @@
 
 package fileevent
 
-/*
-	TODO:
-	- rename the package as journal
-	- use a filenemame type that keeps the fsys and the name in that fsys
-
-*/
 import (
 	"context"
 	"encoding/json"
@@ -19,52 +13,53 @@ import (
 )
 
 /*
+	TODO:
+	- rename the package as journal
+	- use a filenemame type that keeps the fsys and the name in that fsys
+
+*/
+
+/*
 	Collect all actions done on a given file
 */
 
 type Code int
 
 const (
-	NotHandled            Code = iota
-	DiscoveredImage            // = "Scanned image"
-	DiscoveredVideo            // = "Scanned video"
-	DiscoveredSidecar         // = "Scanned side car file"
-	DiscoveredDiscarded       // = "Discarded"
-	DiscoveredUnsupported     // = "File type not supported"
-	DiscoveredUseless         // = "Useless file"
-	DiscoveredSameInJournal // = "Already uploaded"
-
+	NotHandled Code = iota
+	DiscoveredImage
+	DiscoveredVideo
+	DiscoveredSidecar
+	DiscoveredDiscarded
+	DiscoveredUnsupported
+	DiscoveredUseless
+	DiscoveredSameInJournal
 	AnalysisAssociatedMetadata
 	AnalysisMissingAssociatedMetadata
 	AnalysisLocalDuplicate
-
 	UploadNotSelected
-	UploadUpgraded        // = "Server's asset upgraded"
-	UploadServerDuplicate // = "Server has photo"
-	UploadServerBetter    // = "Server's asset is better"
+	UploadUpgraded
+	UploadServerDuplicate
+	UploadServerBetter
 	UploadAlbumCreated
-	UploadAddToAlbum // = "Added to an album"
+	UploadAddToAlbum
 	UploadLi
-	UploadServerError // = "Server error"
-
-	Uploaded  // = "Uploaded"
-	Stacked   // = "Stacked"
-	LivePhoto // = "Live photo"
-	Metadata  // = "Metadata files"
-	INFO      // = "Info"
-
-	Written // = "Written"
-
-	Tagged // = "Tagged"
-
+	UploadServerError
+	Uploaded
+	Stacked
+	LivePhoto
+	Metadata
+	INFO
+	Written
+	Tagged
 	Error
 	MaxCode
 )
 
 var _code = map[Code]string{
-	NotHandled:            "Not handled",
-	DiscoveredImage:       "scanned image file",
-	DiscoveredVideo:       "scanned video file",
+	NotHandled:              "Not handled",
+	DiscoveredImage:         "scanned image file",
+	DiscoveredVideo:         "scanned video file",
 	DiscoveredSidecar:       "scanned sidecar file",
 	DiscoveredDiscarded:     "discarded file",
 	DiscoveredUnsupported:   "unsupported file",
