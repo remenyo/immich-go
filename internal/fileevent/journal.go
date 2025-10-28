@@ -202,7 +202,7 @@ func (r *Journal) writeJournal() error {
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(r.jnlPath, b, 0666)
+		err = os.WriteFile(r.jnlPath, b, 0o666)
 		if err != nil {
 			return err
 		}
