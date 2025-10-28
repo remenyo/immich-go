@@ -10,8 +10,10 @@ package fileevent
 */
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"sync/atomic"
 )
@@ -26,10 +28,11 @@ const (
 	NotHandled            Code = iota
 	DiscoveredImage            // = "Scanned image"
 	DiscoveredVideo            // = "Scanned video"
-	DiscoveredSidecar          // = "Scanned side car file"
-	DiscoveredDiscarded        // = "Discarded"
-	DiscoveredUnsupported      // = "File type not supported"
-	DiscoveredUseless          // = "Useless file"
+	DiscoveredSidecar         // = "Scanned side car file"
+	DiscoveredDiscarded       // = "Discarded"
+	DiscoveredUnsupported     // = "File type not supported"
+	DiscoveredUseless         // = "Useless file"
+	DiscoveredSameInJournal // = "Already uploaded"
 
 	AnalysisAssociatedMetadata
 	AnalysisMissingAssociatedMetadata
@@ -62,10 +65,11 @@ var _code = map[Code]string{
 	NotHandled:            "Not handled",
 	DiscoveredImage:       "scanned image file",
 	DiscoveredVideo:       "scanned video file",
-	DiscoveredSidecar:     "scanned sidecar file",
-	DiscoveredDiscarded:   "discarded file",
-	DiscoveredUnsupported: "unsupported file",
-	DiscoveredUseless:     "useless file",
+	DiscoveredSidecar:       "scanned sidecar file",
+	DiscoveredDiscarded:     "discarded file",
+	DiscoveredUnsupported:   "unsupported file",
+	DiscoveredUseless:       "useless file",
+	DiscoveredSameInJournal: "already uploaded",
 
 	AnalysisAssociatedMetadata:        "associated metadata file",
 	AnalysisMissingAssociatedMetadata: "missing associated metadata file",
@@ -97,6 +101,7 @@ var _logLevels = map[Code]slog.Level{
 	DiscoveredDiscarded:               slog.LevelWarn,
 	DiscoveredUnsupported:             slog.LevelWarn,
 	DiscoveredUseless:                 slog.LevelWarn,
+	DiscoveredSameInJournal:           slog.LevelInfo,
 	AnalysisAssociatedMetadata:        slog.LevelInfo,
 	AnalysisMissingAssociatedMetadata: slog.LevelWarn,
 	AnalysisLocalDuplicate:            slog.LevelWarn,
@@ -122,27 +127,49 @@ func (e Code) String() string {
 	return fmt.Sprintf("unknown event code: %d", int(e))
 }
 
-type Recorder struct {
-	counts counts
-	log    *slog.Logger
+type Journal struct {
+	counts  counts
+	log     *slog.Logger
+	jnlPath string
+	files   map[string]Code
 }
 
 type counts []int64
 
-func NewRecorder(l *slog.Logger) *Recorder {
-	r := &Recorder{
-		counts: make([]int64, MaxCode),
-		log:    l,
+func NewJournal(l *slog.Logger, jnlPath string) (*Journal, error) {
+	r := &Journal{
+		counts:  make([]int64, MaxCode),
+		log:     l,
+		jnlPath: jnlPath,
+		files:   map[string]Code{},
 	}
-	return r
+	if jnlPath != "" {
+		b, err := os.ReadFile(jnlPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return nil, err
+			}
+		} else {
+			err = json.Unmarshal(b, &r.files)
+			if err != nil {
+				l.Error("can't read the journal file, it will be ignored", "err", err, "path", jnlPath)
+			}
+		}
+	}
+	return r, nil
 }
 
-func (r *Recorder) Log() *slog.Logger {
+func (r *Journal) Log() *slog.Logger {
 	return r.log
 }
 
-func (r *Recorder) Record(ctx context.Context, code Code, file slog.LogValuer, args ...any) {
+func (r *Journal) Record(ctx context.Context, code Code, file slog.LogValuer, args ...any) {
 	atomic.AddInt64(&r.counts[code], 1)
+
+	if r.jnlPath != "" && file != nil {
+		r.files[file.LogValue().String()] = code
+	}
+
 	if r.log != nil {
 		level := _logLevels[code]
 		if file != nil {
@@ -163,11 +190,40 @@ func (r *Recorder) Record(ctx context.Context, code Code, file slog.LogValuer, a
 	}
 }
 
-func (r *Recorder) SetLogger(l *slog.Logger) {
+func (r *Journal) SetLogger(l *slog.Logger) {
 	r.log = l
 }
 
-func (r *Recorder) Report() string {
+func (r *Journal) Close() {
+	err := r.writeJournal()
+	if err != nil {
+		r.log.Error("can't write the journal file", "err", err, "path", r.jnlPath)
+	}
+}
+
+func (r *Journal) writeJournal() error {
+	if r.jnlPath != "" {
+		b, err := json.MarshalIndent(r.files, "", " ")
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(r.jnlPath, b, 0666)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Journal) HasBeenUploaded(filename string) bool {
+	c, ok := r.files[filename]
+	if ok {
+		return c == Uploaded
+	}
+	return false
+}
+
+func (r *Journal) Report() string {
 	sb := strings.Builder{}
 
 	countAnalysis := 0
@@ -177,6 +233,7 @@ func (r *Recorder) Report() string {
 		DiscoveredSidecar,
 		DiscoveredDiscarded,
 		DiscoveredUnsupported,
+		DiscoveredSameInJournal,
 		AnalysisLocalDuplicate,
 		AnalysisAssociatedMetadata,
 		AnalysisMissingAssociatedMetadata,
@@ -194,6 +251,7 @@ func (r *Recorder) Report() string {
 			DiscoveredSidecar,
 			DiscoveredDiscarded,
 			DiscoveredUnsupported,
+			DiscoveredSameInJournal,
 			AnalysisLocalDuplicate,
 			AnalysisAssociatedMetadata,
 			AnalysisMissingAssociatedMetadata,
@@ -232,7 +290,7 @@ func (r *Recorder) Report() string {
 	return sb.String()
 }
 
-func (r *Recorder) GetCounts() []int64 {
+func (r *Journal) GetCounts() []int64 {
 	counts := make([]int64, MaxCode)
 	for i := range counts {
 		counts[i] = atomic.LoadInt64(&r.counts[i])
@@ -240,17 +298,17 @@ func (r *Recorder) GetCounts() []int64 {
 	return counts
 }
 
-func (r *Recorder) TotalAssets() int64 {
+func (r *Journal) TotalAssets() int64 {
 	return atomic.LoadInt64(&r.counts[DiscoveredImage]) + atomic.LoadInt64(&r.counts[DiscoveredVideo])
 }
 
-func (r *Recorder) TotalProcessedGP() int64 {
+func (r *Journal) TotalProcessedGP() int64 {
 	return atomic.LoadInt64(&r.counts[AnalysisAssociatedMetadata]) +
 		atomic.LoadInt64(&r.counts[AnalysisMissingAssociatedMetadata]) +
 		atomic.LoadInt64(&r.counts[DiscoveredDiscarded])
 }
 
-func (r *Recorder) TotalProcessed(forcedMissingJSON bool) int64 {
+func (r *Journal) TotalProcessed(forcedMissingJSON bool) int64 {
 	v := atomic.LoadInt64(&r.counts[Uploaded]) +
 		atomic.LoadInt64(&r.counts[UploadServerError]) +
 		atomic.LoadInt64(&r.counts[UploadNotSelected]) +

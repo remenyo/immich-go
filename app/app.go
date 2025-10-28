@@ -17,7 +17,7 @@ type (
 type Application struct {
 	client Client
 	log    *Log
-	jnl    *fileevent.Recorder
+	jnl    *fileevent.Journal
 	tz     *time.Location
 
 	// TODO manage configuration file
@@ -50,11 +50,11 @@ func (app *Application) Client() *Client {
 	return &app.client
 }
 
-func (app *Application) Jnl() *fileevent.Recorder {
+func (app *Application) Jnl() *fileevent.Journal {
 	return app.jnl
 }
 
-func (app *Application) SetJnl(jnl *fileevent.Recorder) {
+func (app *Application) SetJnl(jnl *fileevent.Journal) {
 	app.jnl = jnl
 }
 
