@@ -45,7 +45,7 @@ func AddLogFlags(ctx context.Context, cmd *cobra.Command, app *Application) {
 }
 
 func (log *Log) OpenLogFile() error {
-	var w io.Writer = log.mainWriter
+	w := log.mainWriter
 	var err error
 
 	if w == nil {
