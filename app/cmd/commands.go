@@ -13,7 +13,7 @@ import (
 )
 
 // Run immich-go
-func RootImmichGoCommand(ctx context.Context) (*cobra.Command, *app.Application) {
+func RootImmichGoCommand(ctx context.Context, ic *app.UploadCache) (*cobra.Command, *app.Application) {
 	viper.SetEnvPrefix("IMMICHGO")
 
 	// Create the application context
@@ -26,8 +26,7 @@ func RootImmichGoCommand(ctx context.Context) (*cobra.Command, *app.Application)
 		Version: app.Version,
 	}
 	cobra.EnableTraverseRunHooks = true // doc: cobra/site/content/user_guide.md
-	a := app.New(ctx, c)
-
+	a := app.New(ctx, c, ic)
 	c.PersistentFlags().Int("retry-max", 0, "Maximum number of retries on failed commands.")
 	c.PersistentFlags().Duration("retry-delay", 5*time.Second, "Delay between retries.")
 

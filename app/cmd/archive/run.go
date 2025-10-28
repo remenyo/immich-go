@@ -9,7 +9,7 @@ import (
 	"github.com/simulot/immich-go/internal/fileevent"
 )
 
-func run(ctx context.Context, jnl *fileevent.Recorder, _ *app.Application, source adapters.Reader, dest adapters.AssetWriter) error {
+func run(ctx context.Context, jnl *fileevent.Journal, _ *app.Application, source adapters.Reader, dest adapters.AssetWriter) error {
 	gChan := source.Browse(ctx)
 	errCount := 0
 	for {

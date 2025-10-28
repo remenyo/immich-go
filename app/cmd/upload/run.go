@@ -408,6 +408,11 @@ func (upCmd *UpCmd) handleAsset(ctx context.Context, a *assets.Asset) error {
 	defer func() {
 		a.Close() // Close and clean resources linked to the local asset
 	}()
+	//
+	if upCmd.app.UploadCache.Exists(a.File.FullName()) {
+		upCmd.app.Jnl().Record(ctx, fileevent.DiscoveredSameInJournal, a.File, "reason", "already uploaded in this session")
+		return nil
+	}
 	if upCmd.app.Jnl().HasBeenUploaded(a.File.FullName()) {
 		upCmd.app.Jnl().Record(ctx, fileevent.DiscoveredSameInJournal, a.File)
 		return nil
@@ -601,6 +606,7 @@ func (upCmd *UpCmd) DeleteServerAssets(ctx context.Context, ids []string) error 
 }
 
 func (upCmd *UpCmd) processUploadedAsset(ctx context.Context, a *assets.Asset, serverStatus string) {
+	upCmd.app.UploadCache.Add(a.File.FullName())
 	if serverStatus != immich.StatusDuplicate {
 		// TODO: current version of Immich doesn't allow to add same tag to an asset already tagged.
 		//       there is no mean to go the list of tagged assets for a given tag.

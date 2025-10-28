@@ -151,7 +151,11 @@ func TestBrowse(t *testing.T) {
 				InfoCollector:  filenames.NewInfoCollector(time.Local, filetypes.DefaultSupportedMedia),
 			}
 			log.Info("\n\n\ntest case: " + c.name)
-			recorder := fileevent.NewRecorder(log.Logger)
+			recorder, err := fileevent.NewJournal(log.Logger, "")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 			b, err := NewTakeout(ctx, recorder, flags, fsys...)
 			if err != nil {
 				t.Error(err)
@@ -240,8 +244,11 @@ func TestAlbums(t *testing.T) {
 				return
 			}
 			log.Info("\n\n\ntest case: " + c.name)
-			recorder := fileevent.NewRecorder(log.Logger)
-
+			recorder, err := fileevent.NewJournal(log.Logger, "")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 			fsys := c.gen()
 			flags := &ImportFlags{
 				SupportedMedia: filetypes.DefaultSupportedMedia,

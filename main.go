@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/simulot/immich-go/app"
 	"github.com/simulot/immich-go/app/cmd"
 )
 
@@ -40,7 +41,9 @@ func immichGoMain(ctx context.Context) error {
 		cancel(errors.New("Ctrl+C received")) // Cancel the context when Ctrl+C is received
 	}()
 
-	c, a := cmd.RootImmichGoCommand(ctx)
+	ic := app.NewUploadCache()
+
+	c, a := cmd.RootImmichGoCommand(ctx, ic)
 	err := c.ExecuteContext(ctx)
 	if err == nil {
 		return nil
@@ -56,7 +59,7 @@ func immichGoMain(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		}
-		c, a = cmd.RootImmichGoCommand(ctx)
+		c, a = cmd.RootImmichGoCommand(ctx, ic)
 		c.SetArgs(os.Args[1:])
 		err = c.ExecuteContext(ctx)
 		if err == nil {

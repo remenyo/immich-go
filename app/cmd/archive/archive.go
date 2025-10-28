@@ -55,7 +55,11 @@ func NewImportFromFolderCommand(ctx context.Context, parent *cobra.Command, app 
 		ctx := cmd.Context()
 		log := app.Log()
 		if app.Jnl() == nil {
-			app.SetJnl(fileevent.NewRecorder(app.Log().Logger))
+			jnl, err := fileevent.NewJournal(app.Log().Logger, "")
+			if err != nil {
+				return err
+			}
+			app.SetJnl(jnl)
 			app.Jnl().SetLogger(app.Log().SetLogWriter(os.Stdout))
 		}
 
@@ -111,7 +115,11 @@ func NewFromGooglePhotosCommand(ctx context.Context, parent *cobra.Command, app 
 		ctx := cmd.Context()
 		log := app.Log()
 		if app.Jnl() == nil {
-			app.SetJnl(fileevent.NewRecorder(app.Log().Logger))
+			jnl, err := fileevent.NewJournal(app.Log().Logger, "")
+			if err != nil {
+				return err
+			}
+			app.SetJnl(jnl)
 			app.Jnl().SetLogger(app.Log().SetLogWriter(os.Stdout))
 		}
 		options.TZ = app.GetTZ()
@@ -161,7 +169,11 @@ func NewFromImmichCommand(ctx context.Context, parent *cobra.Command, app *app.A
 	cmd.RunE = func(cmd *cobra.Command, args []string) error { //nolint:contextcheck
 		ctx := cmd.Context()
 		if app.Jnl() == nil {
-			app.SetJnl(fileevent.NewRecorder(app.Log().Logger))
+			jnl, err := fileevent.NewJournal(app.Log().Logger, "")
+			if err != nil {
+				return err
+			}
+			app.SetJnl(jnl)
 			app.Jnl().SetLogger(app.Log().SetLogWriter(os.Stdout))
 		}
 

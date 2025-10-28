@@ -165,7 +165,11 @@ func TestLocalAssets(t *testing.T) {
 				return
 			}
 			log.Info("Test case: " + c.name)
-			recorder := fileevent.NewRecorder(log.Logger)
+			recorder, err := fileevent.NewJournal(log.Logger, "")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 			b, err := NewLocalFiles(ctx, recorder, &c.flags, c.fsys...)
 			if err != nil {
 				t.Error(err)
