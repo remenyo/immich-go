@@ -46,6 +46,9 @@ type UploadOptions struct {
 	// Concurrent upload configuration
 	ConcurrentUploads int // Number of concurrent upload workers
 
+	// Journal file
+	JournalFile string // Path to the journal file
+
 	Filters []filters.Filter
 }
 
@@ -59,6 +62,7 @@ func NewUploadCommand(ctx context.Context, a *app.Application) *cobra.Command {
 	app.AddClientFlags(ctx, cmd, a, false)
 	cmd.TraverseChildren = true
 	cmd.PersistentFlags().BoolVar(&options.NoUI, "no-ui", false, "Disable the user interface")
+	cmd.PersistentFlags().StringVar(&options.JournalFile, "journal-file", "", "Journal file. By default, the journal is kept in memory..")
 	cmd.PersistentFlags().BoolVar(&options.Overwrite, "overwrite", false, "Always overwrite files on the server with local versions")
 	cmd.PersistentFlags().IntVar(&options.ConcurrentUploads, "concurrent-uploads", runtime.NumCPU(), "Number of concurrent upload workers (1-20)")
 	cmd.PersistentPreRunE = app.ChainRunEFunctions(cmd.PersistentPreRunE, options.Open, ctx, cmd, a)
@@ -74,7 +78,11 @@ func NewUploadCommand(ctx context.Context, a *app.Application) *cobra.Command {
 func (options *UploadOptions) Open(ctx context.Context, cmd *cobra.Command, app *app.Application) error {
 	// Initialize the Journal
 	if app.Jnl() == nil {
-		app.SetJnl(fileevent.NewRecorder(app.Log().Logger))
+		j, err := fileevent.NewJournal(app.Log().Logger, options.JournalFile)
+		if err != nil {
+			return err
+		}
+		app.SetJnl(j)
 	}
 	app.SetTZ(time.Local)
 	if tz, err := cmd.Flags().GetString("time-zone"); err == nil && tz != "" {

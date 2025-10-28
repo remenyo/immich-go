@@ -79,6 +79,11 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 		case tcell.KeyCtrlQ, tcell.KeyCtrlC:
 			ui.restoreLogger(app)
 			cancel(errors.New("interrupted: Ctrl+C or Ctrl+Q pressed"))
+		case tcell.KeyCtrlR:
+			upCmd.Restart = true
+			ui.restoreLogger(app)
+			cancel(errors.New("interrupted: Ctrl+R pressed"))
+
 		}
 		return event
 	})
@@ -205,7 +210,7 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 			messages.WriteString("Some errors have occurred. Look at the log file for details\n")
 		}
 
-		modal := newModal(messages.String())
+		modal := newModal(messages.String(), upCmd.Restart)
 		pages.AddPage("modal", modal, true, false)
 		// upload is done!
 		pages.ShowPage("modal")
@@ -226,8 +231,12 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 	return err
 }
 
-func newModal(message string) tview.Primitive {
-	message += "\nYou can quit the program safely."
+func newModal(message string, restart bool) tview.Primitive {
+	if restart {
+		message += "\nThe program will be restarted."
+	} else {
+		message += "\nYou can quit the program safely."
+	}
 	lines := strings.Count(message, "\n")
 	// Returns a new primitive which puts the provided primitive in the center and
 	// sets its size to the given width and height.

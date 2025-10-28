@@ -45,6 +45,7 @@ type UpCmd struct {
 
 	// shouldResumeJobs map[string]bool // List of jobs to resume
 	finished bool // the finish task has been run
+	Restart  bool // Restart the application
 }
 
 func newUpload(mode UpLoadMode, app *app.Application, options *UploadOptions) *UpCmd {
@@ -127,13 +128,15 @@ func (UpCmd *UpCmd) resumeJobs(_ context.Context, app *app.Application) error {
 
 	// Start with a context not yet cancelled
 	ctx := context.Background() //nolint
-	for _, name := range jobs {
-		_, err := app.Client().AdminImmich.SendJobCommand(ctx, name, "resume", true) //nolint:contextcheck
-		if err != nil {
-			UpCmd.app.Jnl().Log().Error("Immich Job command sent", "resume", name, "err", err.Error())
-			return err
+	if !UpCmd.Restart {
+		for _, name := range jobs {
+			_, err := app.Client().AdminImmich.SendJobCommand(ctx, name, "resume", true) //nolint:contextcheck
+			if err != nil {
+				UpCmd.app.Jnl().Log().Error("Immich Job command sent", "resume", name, "err", err.Error())
+				return err
+			}
+			UpCmd.app.Jnl().Log().Info("Immich Job command sent", "resume", name)
 		}
-		UpCmd.app.Jnl().Log().Info("Immich Job command sent", "resume", name)
 	}
 	return nil
 }
@@ -180,6 +183,8 @@ func (upCmd *UpCmd) run(ctx context.Context, adapter adapters.Reader, app *app.A
 	defer func() {
 		fmt.Println(app.Jnl().Report())
 	}()
+	defer app.Jnl().Close()
+
 	upCmd.albumsCache = cache.NewCollectionCache(50, func(album assets.Album, ids []string) (assets.Album, error) {
 		return upCmd.saveAlbum(ctx, album, ids)
 	})
@@ -403,7 +408,10 @@ func (upCmd *UpCmd) handleAsset(ctx context.Context, a *assets.Asset) error {
 	defer func() {
 		a.Close() // Close and clean resources linked to the local asset
 	}()
-
+	if upCmd.app.Jnl().HasBeenUploaded(a.File.FullName()) {
+		upCmd.app.Jnl().Record(ctx, fileevent.DiscoveredSameInJournal, a.File)
+		return nil
+	}
 	// var status stri g
 	advice, err := upCmd.assetIndex.ShouldUpload(a, upCmd)
 	if err != nil {

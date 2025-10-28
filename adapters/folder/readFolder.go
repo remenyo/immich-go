@@ -34,7 +34,7 @@ const icloudMetadataExt = ".csv"
 
 type LocalAssetBrowser struct {
 	fsyss                   []fs.FS
-	log                     *fileevent.Recorder
+	log                     *fileevent.Journal
 	flags                   *ImportFolderOptions
 	pool                    *worker.Pool
 	wg                      sync.WaitGroup
@@ -45,7 +45,7 @@ type LocalAssetBrowser struct {
 	icloudMetaPass          bool
 }
 
-func NewLocalFiles(ctx context.Context, l *fileevent.Recorder, flags *ImportFolderOptions, fsyss ...fs.FS) (*LocalAssetBrowser, error) {
+func NewLocalFiles(ctx context.Context, l *fileevent.Journal, flags *ImportFolderOptions, fsyss ...fs.FS) (*LocalAssetBrowser, error) {
 	if flags.ImportIntoAlbum != "" && flags.UsePathAsAlbumName != FolderModeNone {
 		return nil, errors.New("cannot use both --into-album and --folder-as-album")
 	}

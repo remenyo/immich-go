@@ -31,7 +31,7 @@ type Takeout struct {
 	albums      map[string]assets.Album                    // track album names by folder
 	fileTracker *gen.SyncMap[fileKeyTracker, trackingInfo] // map[fileKeyTracker]trackingInfo // key is base name + file size,  value is list of file paths
 	// debugLinkedFiles []linkedFiles
-	log      *fileevent.Recorder
+	log      *fileevent.Journal
 	flags    *ImportFlags // command-line flags
 	groupers []groups.Grouper
 }
@@ -81,7 +81,7 @@ func (af assetFile) LogValue() slog.Value {
 	)
 }
 
-func NewTakeout(ctx context.Context, l *fileevent.Recorder, flags *ImportFlags, fsyss ...fs.FS) (*Takeout, error) {
+func NewTakeout(ctx context.Context, l *fileevent.Journal, flags *ImportFlags, fsyss ...fs.FS) (*Takeout, error) {
 	to := Takeout{
 		fsyss:       fsyss,
 		catalogs:    map[string]directoryCatalog{},
