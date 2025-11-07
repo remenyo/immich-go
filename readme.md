@@ -231,6 +231,8 @@ The following options are shared by all commands:
 | --log-level    | Log level (DEBUG\|INFO\|WARN\|ERROR) (default "INFO") |
 | --log-type     | Log format (TEXT\|JSON) (default "TEXT")              |
 | -v, --version  | Display current version of Immich-Go                  |
+| --retry-max    | Maximum number of retries on failed commands.         |
+| --retry-delay  | Delay between retries.                                |
 
 **The default path for the log files depend on your system:**
 
@@ -245,6 +247,17 @@ The following options are shared by all commands:
 | **Variable**     | **Description**                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------- |
 | IMMICHGO_TEMPDIR | Temporary directory used by Immich-go. Default: User's cache folder, or OS temporary directory. |
+
+### Unattended Execution
+
+For unattended execution, you can use the `--retry-max` and `--retry-delay` flags to automatically retry failed commands. This is useful for running immich-go in a script or as a cron job.
+
+**Example:**
+
+```bash
+# Retry up to 5 times with a 30-second delay between retries
+immich-go upload from-folder --server=http://your-ip:2283 --api-key=your-api-key --retry-max=5 --retry-delay=30s /path/to/your/photos
+```
 
 
 # The **upload** command:
