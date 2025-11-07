@@ -40,19 +40,19 @@ type uiPage struct {
 	watchJobs bool
 }
 
-func (ui *uiPage) highJackLogger(app *app.Application) {
+func (ui *uiPage) highJackLogger(application *app.Application) {
 	ui.logView.SetDynamicColors(true)
-	app.Jnl().SetLogger(app.Log().SetLogWriter(tview.ANSIWriter(ui.logView)))
+	application.Jnl().SetLogger(application.Log().SetLogWriter(tview.ANSIWriter(ui.logView)))
 }
 
-func (ui *uiPage) restoreLogger(app *app.Application) {
-	app.Jnl().SetLogger(app.Log().SetLogWriter(nil))
+func (ui *uiPage) restoreLogger(application *app.Application) {
+	application.Jnl().SetLogger(application.Log().SetLogWriter(nil))
 }
 
-func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
+func (upCmd *UpCmd) runUI(ctx context.Context, application *app.Application) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	uiApp := tview.NewApplication()
-	ui := upCmd.newUI(ctx, app)
+	ui := upCmd.newUI(ctx, application)
 
 	defer cancel(nil)
 	pages := tview.NewPages()
@@ -77,13 +77,12 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 	uiApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlQ, tcell.KeyCtrlC:
-			ui.restoreLogger(app)
+			ui.restoreLogger(application)
 			cancel(errors.New("interrupted: Ctrl+C or Ctrl+Q pressed"))
 		case tcell.KeyCtrlR:
 			upCmd.Restart = true
-			ui.restoreLogger(app)
-			cancel(errors.New("interrupted: Ctrl+R pressed"))
-
+			ui.restoreLogger(application)
+			cancel(app.ErrRestart)
 		}
 		return event
 	})
@@ -132,18 +131,18 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 				return
 			case <-tick.C:
 				uiApp.QueueUpdateDraw(func() {
-					counts := app.Jnl().GetCounts()
+					counts := application.Jnl().GetCounts()
 					for c := range ui.counts {
 						ui.getCountView(c, counts[c])
 					}
 					if upCmd.Mode == UpModeGoogleTakeout {
-						ui.immichPrepare.SetMaxValue(int(app.Jnl().TotalAssets()))
-						ui.immichPrepare.SetValue(int(app.Jnl().TotalProcessedGP()))
+						ui.immichPrepare.SetMaxValue(int(application.Jnl().TotalAssets()))
+						ui.immichPrepare.SetValue(int(application.Jnl().TotalProcessedGP()))
 
 						if preparationDone.Load() {
-							ui.immichUpload.SetMaxValue(int(app.Jnl().TotalAssets()))
+							ui.immichUpload.SetMaxValue(int(application.Jnl().TotalAssets()))
 						}
-						ui.immichUpload.SetValue(int(app.Jnl().TotalProcessed(upCmd.takeoutOptions.KeepJSONLess)))
+						ui.immichUpload.SetValue(int(application.Jnl().TotalProcessed(upCmd.takeoutOptions.KeepJSONLess)))
 					}
 				})
 			}
@@ -202,10 +201,10 @@ func (upCmd *UpCmd) runUI(ctx context.Context, app *app.Application) error {
 		// 	return context.Cause(ctx)
 		// }
 
-		err = errors.Join(err, upCmd.finishing(ctx, app))
+		err = errors.Join(err, upCmd.finishing(ctx, application))
 
 		uploadDone.Store(true)
-		counts := app.Jnl().GetCounts()
+		counts := application.Jnl().GetCounts()
 		if counts[fileevent.Error]+counts[fileevent.UploadServerError] > 0 {
 			messages.WriteString("Some errors have occurred. Look at the log file for details\n")
 		}
@@ -257,7 +256,7 @@ func newModal(message string, restart bool) tview.Primitive {
 	return modal(text, 80, 2+lines)
 }
 
-func (upCmd *UpCmd) newUI(ctx context.Context, a *app.Application) *uiPage {
+func (upCmd *UpCmd) newUI(ctx context.Context, application *app.Application) *uiPage {
 	ui := &uiPage{
 		counts: map[fileevent.Code]*tview.TextView{},
 	}
@@ -291,7 +290,7 @@ func (upCmd *UpCmd) newUI(ctx context.Context, a *app.Application) *uiPage {
 	ui.addCounter(ui.uploadCounts, 5, "Server has better quality", fileevent.UploadServerBetter)
 	ui.uploadCounts.SetSize(6, 2, 1, 1).SetColumns(30, 10)
 
-	if _, err := a.Client().AdminImmich.GetJobs(ctx); err == nil {
+	if _, err := application.Client().AdminImmich.GetJobs(ctx); err == nil {
 		ui.watchJobs = true
 
 		ui.serverJobs = tvxwidgets.NewSparkline()
@@ -315,7 +314,7 @@ func (upCmd *UpCmd) newUI(ctx context.Context, a *app.Application) *uiPage {
 
 	// Hijack the log
 	ui.logView = tview.NewTextView().SetMaxLines(100).ScrollToEnd()
-	ui.highJackLogger(a)
+	ui.highJackLogger(application)
 
 	ui.logView.SetBorder(true).SetTitle("Log")
 	ui.screen.AddItem(ui.logView, 2, 0, 1, 1, 0, 0, false)

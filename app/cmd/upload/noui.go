@@ -15,7 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (upCmd *UpCmd) runNoUI(ctx context.Context, app *app.Application) error {
+func (upCmd *UpCmd) runNoUI(ctx context.Context, application *app.Application) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	lock := sync.RWMutex{}
 	defer cancel(nil)
@@ -34,7 +34,7 @@ func (upCmd *UpCmd) runNoUI(ctx context.Context, app *app.Application) error {
 	}
 
 	progressString := func() string {
-		counts := app.Jnl().GetCounts()
+		counts := application.Jnl().GetCounts()
 		defer func() {
 			spinIdx++
 			if spinIdx == len(spinner) {
@@ -50,7 +50,7 @@ func (upCmd *UpCmd) runNoUI(ctx context.Context, app *app.Application) error {
 		}
 		lock.Unlock()
 
-		return fmt.Sprintf("\rImmich read %d%%, Assets found: %d, Upload errors: %d, Uploaded %d %s", immichPct, app.Jnl().TotalAssets(), counts[fileevent.UploadServerError], counts[fileevent.Uploaded], string(spinner[spinIdx]))
+		return fmt.Sprintf("\rImmich read %d%%, Assets found: %d, Upload errors: %d, Uploaded %d %s", immichPct, application.Jnl().TotalAssets(), counts[fileevent.UploadServerError], counts[fileevent.Uploaded], string(spinner[spinIdx]))
 	}
 	uiGrp := errgroup.Group{}
 
@@ -109,7 +109,7 @@ func (upCmd *UpCmd) runNoUI(ctx context.Context, app *app.Application) error {
 			cancel(err)
 		}
 
-		counts := app.Jnl().GetCounts()
+		counts := application.Jnl().GetCounts()
 		messages := strings.Builder{}
 		if counts[fileevent.Error]+counts[fileevent.UploadServerError] > 0 {
 			messages.WriteString("Some errors have occurred. Look at the log file for details\n")
@@ -118,7 +118,7 @@ func (upCmd *UpCmd) runNoUI(ctx context.Context, app *app.Application) error {
 		if messages.Len() > 0 {
 			cancel(errors.New(messages.String()))
 		}
-		err = errors.Join(err, upCmd.finishing(ctx, app))
+		err = errors.Join(err, upCmd.finishing(ctx, application))
 		close(stopProgress)
 		return err
 	})

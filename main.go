@@ -43,32 +43,47 @@ func immichGoMain(ctx context.Context) error {
 
 	ic := app.NewUploadCache()
 
-	c, a := cmd.RootImmichGoCommand(ctx, ic)
-	err := c.ExecuteContext(ctx)
-	if err == nil {
-		return nil
-	}
-
-	retryMax, _ := c.Flags().GetInt("retry-max")
-	retryDelay, _ := c.Flags().GetDuration("retry-delay")
-
-	for i := 0; i < retryMax; i++ {
-		a.Log().Info(fmt.Sprintf("command failed, wait for %s, and retry", retryDelay.String()))
-		select {
-		case <-time.After(retryDelay):
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-		c, a = cmd.RootImmichGoCommand(ctx, ic)
-		c.SetArgs(os.Args[1:])
-		err = c.ExecuteContext(ctx)
+	for {
+		c, a := cmd.RootImmichGoCommand(ctx, ic)
+		err := c.ExecuteContext(ctx)
 		if err == nil {
 			return nil
 		}
-	}
+		if errors.Is(err, app.ErrRestart) {
+			a.Log().Info("restart requested...")
+			continue
+		}
 
-	if err != nil && a.Log().GetSLog() != nil {
-		a.Log().Error(err.Error())
+		retryMax, _ := c.Flags().GetInt("retry-max")
+		retryDelay, _ := c.Flags().GetDuration("retry-delay")
+
+		for i := 0; i < retryMax; i++ {
+			a.Log().Info(fmt.Sprintf("command failed, wait for %s, and retry", retryDelay.String()))
+			select {
+			case <-time.After(retryDelay):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			c, a = cmd.RootImmichGoCommand(ctx, ic)
+			c.SetArgs(os.Args[1:])
+			err = c.ExecuteContext(ctx)
+			if err == nil {
+				return nil
+			}
+			if errors.Is(err, app.ErrRestart) {
+				a.Log().Info("restart requested...")
+				break
+			}
+		}
+
+		if err != nil {
+			if errors.Is(err, app.ErrRestart) {
+				continue
+			}
+			if a.Log().GetSLog() != nil {
+				a.Log().Error(err.Error())
+			}
+			return err
+		}
 	}
-	return err
 }

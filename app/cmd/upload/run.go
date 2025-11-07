@@ -467,6 +467,12 @@ func (upCmd *UpCmd) handleAsset(ctx context.Context, a *assets.Asset) error {
 		a.ID = advice.ServerAsset.ID
 		upCmd.app.Jnl().Record(ctx, fileevent.UploadServerBetter, a.File, "reason", advice.Message)
 		upCmd.manageAssetAlbums(ctx, a.File, a.ID, a.Albums)
+		if a.Visibility != advice.ServerAsset.Visibility {
+			err := upCmd.app.Client().Immich.UpdateAssetsVisibility(ctx, []string{a.ID}, a.Visibility)
+			if err != nil {
+				upCmd.app.Jnl().Log().Error("can't set asset visibility", "err", err, "asset", a.File.Name())
+			}
+		}
 
 	case ForceUpload:
 		var serverStatus string

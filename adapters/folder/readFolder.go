@@ -515,6 +515,12 @@ func (la *LocalAssetBrowser) assetFromFile(_ context.Context, fsys fs.FS, name s
 	a.FileSize = int(i.Size())
 	a.FileDate = i.ModTime()
 
+	for _, p := range strings.Split(name, "/") {
+		if p == "Locked Folder" {
+			a.Visibility = "locked"
+		}
+	}
+
 	n := path.Join(path.Dir(name), a.OriginalFileName)
 	if fsys, ok := fsys.(interface{ Name() string }); ok {
 		n = path.Join(fsys.Name(), n)

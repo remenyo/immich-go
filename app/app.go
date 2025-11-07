@@ -2,11 +2,15 @@ package app
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/simulot/immich-go/internal/fileevent"
 	"github.com/spf13/cobra"
 )
+
+// ErrRestart is a special error that can be returned by a command to request a restart.
+var ErrRestart = errors.New("a restart is requested")
 
 type (
 	RunE        func(cmd *cobra.Command, args []string) error
