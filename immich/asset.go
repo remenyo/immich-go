@@ -260,13 +260,13 @@ func (ic *ImmichClient) UpdateAssetsVisibility(ctx context.Context, ids []string
 		return nil
 	}
 	type updAssets struct {
-		IDs        []string `json:"ids"`
-		Visibility string   `json:"visibility"`
+		IDs      []string `json:"ids"`
+		IsHidden bool     `json:"isHidden"`
 	}
 
 	param := updAssets{
-		IDs:        ids,
-		Visibility: visibility,
+		IDs:      ids,
+		IsHidden: visibility == "locked",
 	}
 	return ic.newServerCall(ctx, "updateAssetsVisibility").do(putRequest("/assets", setJSONBody(param)))
 }
